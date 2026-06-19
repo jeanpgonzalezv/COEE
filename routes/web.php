@@ -4,6 +4,8 @@ use App\Http\Controllers\AlertaController;
 use App\Http\Controllers\PanelController;
 use App\Http\Controllers\ReporteController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
+
 
 // ── Página de inicio: redirigir según rol ──────────────────────────────────
 Route::get('/', function () {
@@ -81,3 +83,5 @@ Route::middleware(['auth', 'role:director,utp'])
     ->group(function () {
         Route::get('/exportar-csv', [ReporteController::class, 'exportarCsv'])->name('exportar-csv');
     });
+
+

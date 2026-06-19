@@ -1,58 +1,299 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# COEE — Central de Operaciones y Emergencias Escolares
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistema web de comunicación interna para establecimientos educacionales, que permite a los profesores enviar alertas de emergencia desde su sala con un clic, y al personal administrativo recibirlas y gestionarlas en tiempo real.
 
-## About Laravel
+Proyecto desarrollado para la asignatura **TPY1101 — Taller Aplicado de Programación**, carrera **Analista Programador**, **DUOC UC**.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 📋 Tabla de contenidos
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- [Problema que resuelve](#-problema-que-resuelve)
+- [Equipo de desarrollo](#-equipo-de-desarrollo)
+- [Stack tecnológico](#-stack-tecnológico)
+- [Arquitectura](#-arquitectura)
+- [Roles de usuario](#-roles-de-usuario)
+- [Instalación local con Laragon](#-instalación-local-con-laragon)
+- [Credenciales de prueba](#-credenciales-de-prueba)
+- [Estructura del proyecto](#-estructura-del-proyecto)
+- [Funcionalidades principales](#-funcionalidades-principales)
+- [Comandos útiles](#-comandos-útiles)
+- [Respaldo de base de datos](#-respaldo-de-base-de-datos)
+- [Estado del proyecto](#-estado-del-proyecto)
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 🎯 Problema que resuelve
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+En los establecimientos educacionales chilenos, la comunicación interna ante emergencias se realiza de forma verbal o telefónica. Esto genera:
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+- El profesor debe abandonar la sala para buscar ayuda
+- No existe registro formal de los incidentes
+- El tiempo de respuesta ante emergencias es elevado
+- Los directivos no tienen visibilidad de la frecuencia de incidentes
 
-## Agentic Development
+**COEE** resuelve esto permitiendo el envío de alertas con un clic, recepción en tiempo real, trazabilidad completa y estadísticas para la dirección.
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+---
 
-```bash
-composer require laravel/boost --dev
+## 👥 Equipo de desarrollo
 
-php artisan boost:install
+| Integrante | Rol SCRUM | Rol Técnico |
+|---|---|---|
+| Andrea Andrade  | Product Owner | Representante del cliente |
+| Yordan Cisterna | Scrum Master  | Full Stack Developer |
+| Nicolás Tamayo  | Developer     | Full Stack Developer |
+| Jean González   | Developer     |Full Stack Developer |
+| Yordan Cisterna | Developer     |Full Stack Developer |
+
+---
+
+## 🛠 Stack tecnológico
+
+| Capa | Tecnología | Versión |
+|---|---|---|
+| Backend | PHP | 8.3.30 |
+| Framework | Laravel | 13.2.0 |
+| Base de datos | MySQL / MariaDB | 8.4.3 |
+| Frontend | Bootstrap | 5.3.2 |
+| Templates | Blade | 13.x |
+| Gráficos | Chart.js | 4.4.0 |
+| Alertas UI | SweetAlert2 | 11.x |
+| Autenticación | Laravel Breeze | 13.x |
+| Asistente | Chatbot local en JavaScript (sin API key) |
+| Entorno dev | Laragon | 6.x |
+| Control de versiones | Git / GitHub | — |
+
+---
+
+## 🏗 Arquitectura
+
+COEE utiliza una **arquitectura monolítica con patrón MVC**. Todo el sistema —frontend, backend y base de datos— vive en una única aplicación Laravel.
+
+```
+┌──────────────────────────────────────────────────────┐
+│  CAPA 1 — Navegadores Web                             │
+│  Profesor · Inspector/Admin · Director/UTP · Login    │
+└───────────────────────┬────────────────────────────────┘
+                         ▼
+┌──────────────────────────────────────────────────────┐
+│  CAPA 2 — Laravel 13 (MVC)                            │
+│  Middleware Auth → Router → Controllers → Models      │
+│  Polling AJAX (GET /api/alertas/pendientes cada 10s)  │
+└───────────────────────┬────────────────────────────────┘
+                         ▼
+┌──────────────────────────────────────────────────────┐
+│  CAPA 3 — MySQL / MariaDB                             │
+│  users · salas · alertas · tickets · reportes         │
+└──────────────────────────────────────────────────────┘
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+La comunicación en tiempo real se simula mediante **polling AJAX cada 10 segundos**, evitando dependencias de pago como Pusher o configuraciones complejas de WebSockets.
 
-## Contributing
+> Diagramas completos de arquitectura y modelo entidad-relación disponibles en `/docs`.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+## 🔐 Roles de usuario
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+| Rol | Acceso a |
+|---|---|
+| `profesor` | Panel de envío de alertas (`/sala/dashboard`) |
+| `inspector` | Panel de atención de alertas (`/admin/panel`) |
+| `enfermeria` | Panel de atención de alertas (`/admin/panel`) |
+| `soporte_ti` | Panel de atención de alertas (`/admin/panel`) |
+| `utp` | Panel de atención de alertas (`/admin/panel`) |
+| `director` | Dashboard con estadísticas (`/admin/dashboard`) |
 
-## Security Vulnerabilities
+Cada ruta está protegida por el middleware `CheckRole`, que verifica el rol del usuario autenticado antes de permitir el acceso.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## 💻 Instalación local con Laragon
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Requisitos previos
+- [Laragon](https://laragon.org/) instalado (incluye PHP, MySQL, Composer y Node.js)
+- Git
+
+### Pasos
+
+```bash
+# 1. Clonar el repositorio
+cd C:/laragon/www
+git clone https://github.com/jeanpgonzalezv/COEE.git coee
+cd coee
+
+# 2. Instalar dependencias PHP
+composer install
+
+# 3. Instalar dependencias Node y compilar assets
+npm install
+npm run build
+
+# 4. Configurar el entorno
+cp .env.example .env
+php artisan key:generate
+```
+
+### Configurar la base de datos
+
+Edita el archivo `.env` con tus datos de Laragon:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=coee_db
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Crea la base de datos `coee_db` desde HeidiSQL (botón **Database** en Laragon) y luego ejecuta:
+
+```bash
+php artisan migrate:fresh --seed
+```
+
+### Levantar el servidor
+
+```bash
+php artisan serve
+```
+
+Accede en tu navegador a **http://localhost:8000**
+
+---
+
+## 🔑 Credenciales de prueba
+
+Todos los usuarios generados por el seeder usan la contraseña: **`password`**
+
+| Rol | Email |
+|---|---|
+| Director | `director@coee.cl` |
+| UTP | `utp@coee.cl` |
+| Inspector | `inspector@coee.cl` |
+| Enfermería | `enfermeria@coee.cl` |
+| Soporte TI | `soporte@coee.cl` |
+| Profesor 1 | `profesor1@coee.cl` |
+| Profesor 2 | `profesor2@coee.cl` |
+| Profesor 3 | `profesor3@coee.cl` |
+
+> ⚠️ Para probar el flujo completo (profesor envía → inspector recibe) usa **dos navegadores distintos** (ej: Chrome y Edge), ya que las sesiones de Laravel pueden mezclarse si usas pestañas del mismo navegador.
+
+---
+
+## 📁 Estructura del proyecto
+
+```
+coee/
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── AlertaController.php      # enviar, atender, resolver alertas
+│   │   │   ├── PanelController.php       # vistas sala / admin / dashboard
+│   │   │   └── ReporteController.php     # exportación CSV
+│   │   └── Middleware/
+│   │       └── CheckRole.php             # protección de rutas por rol
+│   └── Models/
+│       ├── User.php
+│       ├── Sala.php
+│       ├── Alerta.php
+│       ├── Ticket.php
+│       └── Reporte.php
+├── database/
+│   ├── migrations/                       # 5 migraciones principales
+│   └── seeders/                          # usuarios, salas y alertas de prueba
+├── resources/
+│   └── views/
+│       ├── layouts/app.blade.php         # layout base + chatbot local
+│       ├── sala/                         # vistas del profesor
+│       └── admin/                        # vistas administrativas
+└── routes/
+    └── web.php                           # rutas agrupadas por rol
+```
+
+---
+
+## ⚙️ Funcionalidades principales
+
+### Envío de alertas (Profesor)
+- Selección de sala activa
+- 5 tipos de alerta: Enfermería, Convivencia/PIE, Soporte TI, UTP, Pánico
+- Confirmación visual con SweetAlert2
+- Modal de confirmación obligatoria para alerta de pánico
+- Validación de alertas duplicadas
+
+### Panel administrativo en tiempo real
+- Actualización automática cada 10 segundos (polling AJAX)
+- Separación de alertas pendientes y en atención
+- Botones para atender y resolver con registro de solución
+
+### Dashboard del Director
+- Gráficos con Chart.js (barras, horizontal, tendencia)
+- Tarjetas de resumen estadístico
+- Exportación de reportes en CSV (compatible con Excel)
+
+### Asistente Educativo Integral
+- Chatbot local en JavaScript, **sin API key ni conexión a internet**
+- Base de conocimiento sobre normativa escolar chilena: PEI, Manual de Convivencia, RICE, Protocolos de Salud Mental, PISE, Reglamento de Evaluación (Decreto 67), Accidentes Escolares, NEE/PIE (Decreto 170), Cuenta Pública, Entrega de Estudiantes, Compromiso Escolar y Evaluación Diagnóstica
+- Chips de preguntas rápidas y búsqueda por palabras clave
+
+---
+
+## 🧰 Comandos útiles
+
+| Comando | Descripción |
+|---|---|
+| `php artisan serve` | Levanta el servidor de desarrollo |
+| `php artisan migrate:fresh --seed` | Resetea la BD y carga datos de prueba |
+| `php artisan config:clear` | Limpia caché de configuración (tras editar `.env`) |
+| `php artisan route:list` | Lista todas las rutas registradas |
+| `npm run build` | Compila assets de frontend |
+
+---
+
+## 💾 Respaldo de base de datos
+
+### Método rápido — HeidiSQL
+1. Abrir HeidiSQL desde Laragon (botón **Database**)
+2. Clic derecho sobre `coee_db` → **Exportar** → **Exportar base de datos como SQL**
+3. Marcar **Datos** y **Estructura**, guardar el archivo `.sql`
+
+### Método terminal — mysqldump
+```bash
+mysqldump -u root -p coee_db > C:/respaldos/coee_backup.sql
+```
+
+### Restauración
+```bash
+mysql -u root -p coee_db < C:/respaldos/coee_backup.sql
+```
+
+> 📄 Procedimiento completo documentado en `/docs/COEE_Procedimiento_Respaldo_BD.docx`
+
+---
+
+## 📊 Estado del proyecto
+
+| Sprint | Contenido | Estado |
+|---|---|---|
+| Sprint 0 | Planificación e inicio | ✅ Completado |
+| Sprint 1 | Autenticación y estructura base | ✅ Completado |
+| Sprint 2 | Gestión de alertas y panel en tiempo real | ✅ Completado |
+| Sprint 3 | Tickets, dashboard y reportes | ✅ Completado |
+| Sprint 4 | Pruebas integrales y entrega final | ✅ Completado |
+
+Gestión del proyecto mediante metodología **SCRUM** con tablero **Jira**.
+
+---
+
+## 📄 Licencia
+
+Proyecto académico desarrollado con fines educativos para DUOC UC. Uso libre para fines de aprendizaje.
+
+---
+
+## 📬 Contacto
+
+Repositorio: [github.com/jeanpgonzalezv/COEE](https://github.com/jeanpgonzalezv/COEE)
