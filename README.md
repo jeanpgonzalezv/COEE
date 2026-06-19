@@ -285,7 +285,7 @@ mysql -u root -p coee_db < C:/respaldos/coee_backup.sql
 | Sprint 4 | Pruebas integrales y entrega final | ✅ Completado |
 
 Gestión del proyecto mediante metodología **SCRUM** con tablero **Jira**.
-
+(https://duocuc-team-mzbgc5lp.atlassian.net/jira/software/projects/COEE/boards/34?atlOrigin=eyJpIjoiNjEyZDg3OGIxM2Q2NDcyNDgzY2M5ZWIxODU2MmFiNGMiLCJwIjoiaiJ9)
 ---
 
 ## 📄 Licencia
