@@ -37,6 +37,159 @@
             text-transform: uppercase;
         }
 
+        /* Boton que abre el panel lateral (usuario) */
+        .dropdown-toggle-user {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #fff;
+            border-radius: 8px;
+            padding: 6px 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .dropdown-toggle-user:hover {
+            background: rgba(255,255,255,0.18);
+            color: #fff;
+        }
+
+        /* Boton hamburguesa que abre el panel lateral */
+        .btn-panel-toggle {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: background 0.2s;
+        }
+        .btn-panel-toggle:hover {
+            background: rgba(255,255,255,0.18);
+        }
+
+        /* ── Panel lateral unificado (navegacion + cuenta) ── */
+        #user-panel-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1040;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease;
+        }
+        #user-panel-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #user-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 270px;
+            height: 100%;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            z-index: 1050;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+        }
+        #user-panel.active {
+            transform: translateX(0);
+        }
+
+        #user-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        #user-panel-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        #user-panel-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            overflow-y: auto;
+        }
+
+        /* Seccion de navegacion dentro del panel */
+        #user-panel-nav {
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        #user-panel-nav .panel-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 22px;
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: background 0.2s;
+        }
+        #user-panel-nav .panel-link:hover {
+            background: rgba(255,255,255,0.08);
+            color: white;
+        }
+        #user-panel-nav .panel-link i {
+            font-size: 1.1rem;
+            width: 22px;
+            text-align: center;
+        }
+
+        /* Seccion de cuenta dentro del panel */
+        #user-panel-account {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 26px 20px;
+        }
+        #user-panel-avatar {
+            font-size: 4rem;
+            color: rgba(255,255,255,0.85);
+            margin-bottom: 10px;
+        }
+        #user-panel-name {
+            color: white;
+            font-size: 1.05rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        #user-panel-account hr {
+            border-color: rgba(255,255,255,0.15);
+            margin: 16px 0;
+            width: 100%;
+        }
+        #user-panel-email {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.82rem;
+            text-align: center;
+            word-break: break-word;
+        }
+
+        #user-panel-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            flex-shrink: 0;
+        }
+
         /* Tarjetas de alerta */
         .alerta-card {
             transition: transform 0.2s, box-shadow 0.2s;
@@ -97,12 +250,12 @@
         }
 
         /* Actualización automática — indicador */
-        #update-indicator {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 9999;
-        }
+      #update-indicator {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    z-index: 1000;
+}
     </style>
 
     @stack('styles')
@@ -110,87 +263,100 @@
 <body>
 
     {{-- ── NAVBAR ── --}}
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-coee">
-        <div class="container-fluid">
-            <a class="navbar-brand fw-bold" href="{{ route('home') }}">
+    <nav class="navbar navbar-dark navbar-coee">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <a class="navbar-brand fw-bold mb-0" href="{{ route('home') }}">
                 <i class="bi bi-shield-fill-exclamation text-danger me-2"></i>
                 COEE
                 <small class="text-muted fs-6 fw-normal d-none d-md-inline"> | Central de Operaciones</small>
             </a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            <div class="d-flex align-items-center gap-2">
+                @auth
+                    <button class="dropdown-toggle-user d-none d-md-flex align-items-center" type="button" onclick="toggleUserPanel()">
+                        <i class="bi bi-person-circle me-2"></i>
+                        {{ auth()->user()->name }}
+                    </button>
+                @endauth
 
-            <div class="collapse navbar-collapse" id="navMenu">
-                <ul class="navbar-nav me-auto">
-                    @auth
-                        @if(auth()->user()->esProfesor())
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('sala.dashboard') }}">
-                                    <i class="bi bi-grid-3x2-gap me-1"></i> Mi Panel
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('sala.historial') }}">
-                                    <i class="bi bi-clock-history me-1"></i> Historial
-                                </a>
-                            </li>
-                        @elseif(auth()->user()->esAdministrativo())
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('admin.panel') }}">
-                                    <i class="bi bi-bell-fill me-1"></i> Panel de Alertas
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('admin.historial') }}">
-                                    <i class="bi bi-journal-text me-1"></i> Historial
-                                </a>
-                            </li>
-                        @elseif(auth()->user()->esDirectivo())
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('admin.dashboard') }}">
-                                    <i class="bi bi-bar-chart-fill me-1"></i> Dashboard
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('admin.panel') }}">
-                                    <i class="bi bi-bell-fill me-1"></i> Alertas en Vivo
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('admin.historial') }}">
-                                    <i class="bi bi-journal-text me-1"></i> Historial
-                                </a>
-                            </li>
-                        @endif
-                    @endauth
-                </ul>
-
-                <ul class="navbar-nav ms-auto align-items-center">
-                    @auth
-                        <li class="nav-item me-3">
-                            <span class="text-light">
-                                <i class="bi bi-person-circle me-1"></i>
-                                {{ auth()->user()->name }}
-                                <span class="badge bg-secondary badge-rol ms-1">
-                                    {{ auth()->user()->rol_label }}
-                                </span>
-                            </span>
-                        </li>
-                        <li class="nav-item">
-                            <form method="POST" action="{{ route('logout') }}" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-outline-light btn-sm">
-                                    <i class="bi bi-box-arrow-right me-1"></i> Salir
-                                </button>
-                            </form>
-                        </li>
-                    @endauth
-                </ul>
+                <button class="btn-panel-toggle" type="button" onclick="toggleUserPanel()" aria-label="Abrir menú">
+                    <i class="bi bi-list"></i>
+                </button>
             </div>
         </div>
     </nav>
+
+    {{-- ── PANEL LATERAL UNIFICADO (navegacion + cuenta) ── --}}
+    @auth
+    <div id="user-panel-overlay" onclick="toggleUserPanel()"></div>
+
+    <div id="user-panel">
+        <div id="user-panel-header">
+            <span>Menú</span>
+            <button onclick="toggleUserPanel()" id="user-panel-close">✕</button>
+        </div>
+
+        <div id="user-panel-body">
+
+            {{-- ── Navegación según rol ── --}}
+            <nav id="user-panel-nav">
+                @if(auth()->user()->esProfesor())
+                    <a class="panel-link" href="{{ route('sala.dashboard') }}">
+                        <i class="bi bi-grid-3x2-gap"></i> Mi Panel
+                    </a>
+                    <a class="panel-link" href="{{ route('sala.historial') }}">
+                        <i class="bi bi-clock-history"></i> Historial
+                    </a>
+                @elseif(auth()->user()->esAdministrativo())
+                    <a class="panel-link" href="{{ route('admin.panel') }}">
+                        <i class="bi bi-bell-fill"></i> Panel de Alertas
+                    </a>
+                    <a class="panel-link" href="{{ route('admin.historial') }}">
+                        <i class="bi bi-journal-text"></i> Historial
+                    </a>
+                @elseif(auth()->user()->esDirectivo())
+                    <a class="panel-link" href="{{ route('admin.dashboard') }}">
+                        <i class="bi bi-bar-chart-fill"></i> Dashboard
+                    </a>
+                    <a class="panel-link" href="{{ route('admin.panel') }}">
+                        <i class="bi bi-bell-fill"></i> Alertas en Vivo
+                    </a>
+                    <a class="panel-link" href="{{ route('admin.historial') }}">
+                        <i class="bi bi-journal-text"></i> Historial
+                    </a>
+                @endif
+            </nav>
+
+            {{-- ── Cuenta del usuario ── --}}
+            <div id="user-panel-account">
+                <div id="user-panel-avatar">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+
+                <div id="user-panel-name">{{ auth()->user()->name }}</div>
+
+                <span class="badge bg-secondary badge-rol mb-2">
+                    {{ auth()->user()->rol_label }}
+                </span>
+
+                <hr>
+
+                <div id="user-panel-email">
+                    <i class="bi bi-envelope me-2"></i>{{ auth()->user()->email }}
+                </div>
+            </div>
+        </div>
+
+        <div id="user-panel-footer">
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="btn btn-outline-danger w-100">
+                    <i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión
+                </button>
+            </form>
+        </div>
+    </div>
+    @endauth
 
     {{-- ── CONTENIDO PRINCIPAL ── --}}
     <main class="py-4">
@@ -223,6 +389,20 @@
     {{-- ── SCRIPTS ── --}}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+    <script>
+        function toggleUserPanel() {
+    document.getElementById('user-panel').classList.toggle('active');
+    document.getElementById('user-panel-overlay').classList.toggle('active');
+
+    // Ocultar/mostrar el asistente educativo cuando el panel este abierto
+    const chatWidget = document.getElementById('chat-widget');
+    if (chatWidget) {
+        const panelAbierto = document.getElementById('user-panel').classList.contains('active');
+        chatWidget.style.display = panelAbierto ? 'none' : 'block';
+    }
+}
+    </script>
 
     @stack('scripts')
    {{-- ── ASISTENTE EDUCATIVO INTEGRAL COEE ── --}}

@@ -18,13 +18,11 @@
             Panel de Alertas en Vivo
         </h4>
         <small class="text-muted">
-            Actualización automática cada 10 segundos ·
+            
             Última actualización: <span id="ultima-actualizacion">ahora</span>
         </small>
     </div>
-    <button class="btn btn-outline-secondary btn-sm" onclick="cargarAlertas()">
-        <i class="bi bi-arrow-clockwise me-1"></i> Actualizar ahora
-    </button>
+    
 </div>
 
 {{-- ── ALERTAS PENDIENTES ── --}}
@@ -108,7 +106,84 @@
 <script>
     const CSRF = document.querySelector('meta[name="csrf-token"]').content;
     let pollingInterval = null;
-    let alertasConocidas = new Set();
+
+    // ── Mapa de estados conocidos: { id: estado } ──
+    // Permite detectar tanto alertas nuevas como cambios de estado
+    let estadosConocidos = {};
+    let primeraCarga = true;
+
+    // ════════════════════════════════════════════════════════════════════
+    // SONIDOS DE NOTIFICACION (Web Audio API — sin archivos externos)
+    // ════════════════════════════════════════════════════════════════════
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Asegura que el audio este activo antes de cada sonido.
+    // Los navegadores pueden volver a suspender el contexto con el tiempo,
+    // por eso se llama antes de CADA reproduccion, no solo la primera vez.
+    function asegurarAudioActivo() {
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function reproducirTono(frecuencias, duracion = 0.15, espacio = 0.05, volumen = 0.3) {
+        asegurarAudioActivo();
+        let tiempo = audioCtx.currentTime;
+        frecuencias.forEach((freq) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+
+            gain.gain.setValueAtTime(volumen, tiempo);
+            gain.gain.exponentialRampToValueAtTime(0.001, tiempo + duracion);
+
+            osc.start(tiempo);
+            osc.stop(tiempo + duracion);
+
+            tiempo += duracion + espacio;
+        });
+    }
+
+    // Sonido normal — campana suave (alerta nueva o cambio de estado)
+    function sonidoNotificacionNormal() {
+        reproducirTono([880, 1100], 0.18, 0.08, 0.25);
+    }
+
+    // Sonido de panico — sirena urgente
+    function sonidoPanico() {
+        asegurarAudioActivo();
+        let tiempo = audioCtx.currentTime;
+        for (let i = 0; i < 4; i++) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(i % 2 === 0 ? 1200 : 800, tiempo);
+
+            gain.gain.setValueAtTime(0.35, tiempo);
+            gain.gain.exponentialRampToValueAtTime(0.001, tiempo + 0.25);
+
+            osc.start(tiempo);
+            osc.stop(tiempo + 0.25);
+
+            tiempo += 0.25;
+        }
+    }
+
+    // Habilitar audio tras la primera interaccion del usuario (requisito navegadores)
+    document.addEventListener('click', () => {
+        asegurarAudioActivo();
+    });
+
+    // ════════════════════════════════════════════════════════════════════
+    // POLLING Y RENDERIZADO
+    // ════════════════════════════════════════════════════════════════════
 
     /**
      * Llama al endpoint AJAX y actualiza las listas de alertas.
@@ -124,6 +199,7 @@
             actualizarListaAlertas(data.alertas);
             document.getElementById('ultima-actualizacion').textContent = new Date().toLocaleTimeString('es-CL');
             document.getElementById('status-badge').innerHTML = '<i class="bi bi-wifi me-1"></i> En vivo';
+            document.getElementById('status-badge').className = 'badge bg-success';
         })
         .catch(() => {
             document.getElementById('status-badge').innerHTML = '<i class="bi bi-wifi-off me-1"></i> Sin conexión';
@@ -131,8 +207,8 @@
         });
     }
 
-    /**
-     * Renderiza las alertas en el DOM.
+     /**
+     * Renderiza las alertas en el DOM y dispara sonidos segun corresponda.
      */
     function actualizarListaAlertas(alertas) {
         const pendientes = alertas.filter(a => a.estado === 'pendiente');
@@ -141,13 +217,29 @@
         document.getElementById('contador-pendientes').textContent = pendientes.length;
         document.getElementById('contador-atencion').textContent  = enAtencion.length;
 
-        // Detectar nuevas alertas para notificar
+        // ── Detectar alertas nuevas (solo para el modal de panico, una sola vez) ──
         alertas.forEach(a => {
-            if (!alertasConocidas.has(a.id) && a.tipo === 'panico') {
+            const estadoAnterior = estadosConocidos[a.id];
+            const esNueva        = estadoAnterior === undefined;
+
+            if (!primeraCarga && esNueva && a.tipo === 'panico') {
                 notificarPanico(a);
             }
-            alertasConocidas.add(a.id);
+
+            estadosConocidos[a.id] = a.estado;
         });
+
+        primeraCarga = false;
+
+        // ── Sonido persistente: suena en CADA ciclo de polling mientras haya pendientes ──
+        if (pendientes.length > 0) {
+            const hayPanico = pendientes.some(a => a.tipo === 'panico');
+            if (hayPanico) {
+                sonidoPanico();
+            } else {
+                sonidoNotificacionNormal();
+            }
+        }
 
         // Renderizar lista de pendientes
         const listaPendientes = document.getElementById('lista-pendientes');
@@ -217,7 +309,7 @@
     }
 
     /**
-     * Notificación visual/sonora para alerta de pánico.
+     * Notificación visual para alerta de pánico (el sonido se dispara aparte).
      */
     function notificarPanico(alerta) {
         Swal.fire({
@@ -285,7 +377,7 @@
 
     // ── Inicializar polling automático ──
     cargarAlertas();
-    pollingInterval = setInterval(cargarAlertas, 10000); // cada 10 segundos
+    pollingInterval = setInterval(cargarAlertas, 3000); // cada 3 segundos
 </script>
 
 <style>

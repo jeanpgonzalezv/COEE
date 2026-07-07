@@ -84,4 +84,6 @@ Route::middleware(['auth', 'role:director,utp'])
         Route::get('/exportar-csv', [ReporteController::class, 'exportarCsv'])->name('exportar-csv');
     });
 
-
+Route::get('/api/mis-alertas', [AlertaController::class, 'misAlertas'])
+    ->middleware('auth')
+    ->name('api.mis-alertas');

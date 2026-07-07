@@ -97,7 +97,7 @@
                     Mis Alertas Activas
                 </h6>
             </div>
-            <div class="card-body p-0">
+            <div class="card-body p-0" id="lista-alertas-activas">
                 @forelse($alertasActivas as $alerta)
                     <div class="p-3 border-bottom alerta-card {{ $alerta->tipo }}">
                         <div class="d-flex justify-content-between align-items-start">
@@ -148,6 +148,57 @@
     const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').content;
 
     /**
+     * Actualiza la lista de alertas activas del profesor via AJAX.
+     */
+    function actualizarMisAlertas() {
+        fetch('/api/mis-alertas', {
+            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
+        })
+        .then(r => r.json())
+        .then(data => {
+            const contenedor = document.getElementById('lista-alertas-activas');
+            if (!contenedor) return;
+
+            // Filtrar solo las alertas del usuario actual
+            const alertas = data.alertas || [];
+
+            if (alertas.length === 0) {
+                contenedor.innerHTML = `
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-check-circle-fill text-success fs-2 d-block mb-2"></i>
+                        Sin alertas activas
+                    </div>`;
+                return;
+            }
+
+            contenedor.innerHTML = alertas.map(a => `
+                <div class="p-3 border-bottom alerta-card ${a.tipo}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <span class="badge bg-${a.tipo_color} mb-1">
+                            ${a.tipo_label}
+                        </span>
+                        <span class="badge bg-light text-dark tiempo-badge">
+                            <i class="bi bi-clock me-1"></i>
+                            ${a.tiempo_transcurrido} min
+                        </span>
+                    </div>
+                    <div class="small text-muted">
+                        <i class="bi bi-geo-alt me-1"></i>${a.sala}
+                    </div>
+                    <div class="mt-1">
+                        <span class="badge bg-${a.estado === 'pendiente' ? 'warning text-dark' : 'info'}">
+                            ${a.estado === 'pendiente' ? 'Pendiente' : 'En Atención'}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        })
+        .catch(() => {
+            // Si falla silenciosamente no interrumpir al profesor
+        });
+    }
+
+    /**
      * Envía una alerta al servidor vía AJAX.
      */
     function enviarAlerta(tipo) {
@@ -183,8 +234,8 @@
                     timerProgressBar: true,
                     showConfirmButton: false,
                 });
-                // Recargar la lista de alertas activas después de 1 segundo
-                setTimeout(() => location.reload(), 3500);
+                // Actualizar lista de alertas activas inmediatamente
+                setTimeout(() => actualizarMisAlertas(), 500);
             } else {
                 Swal.fire({
                     icon: 'error',
@@ -221,12 +272,16 @@
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#dc3545',
             cancelButtonColor: '#6c757d',
-            focusCancel: true,  // El foco por defecto es en "Cancelar" (más seguro)
+            focusCancel: true,
         }).then(result => {
             if (result.isConfirmed) {
                 enviarAlerta('panico');
             }
         });
     }
+
+    // ── Iniciar polling cada 3 segundos ──
+    actualizarMisAlertas();
+    setInterval(actualizarMisAlertas, 3000);
 </script>
 @endpush

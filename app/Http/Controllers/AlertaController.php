@@ -185,4 +185,26 @@ class AlertaController extends Controller
 
         return view('sala.historial', compact('alertas'));
     }
+    public function misAlertas()
+{
+    $alertas = Alerta::where('usuario_id', auth()->id())
+        ->whereIn('estado', ['pendiente', 'en_atencion'])
+        ->with('sala')
+        ->orderBy('created_at', 'desc')
+        ->get()
+        ->map(function ($a) {
+            return [
+                'id'                 => $a->id,
+                'tipo'               => $a->tipo,
+                'tipo_label'         => $a->tipo_label,
+                'tipo_color'         => $a->tipo_color,
+                'estado'             => $a->estado,
+                'estado_label'       => $a->estado_label,
+                'sala'               => $a->sala->nombre,
+                'tiempo_transcurrido'=> $a->tiempo_transcurrido,
+            ];
+        });
+
+    return response()->json(['alertas' => $alertas]);
+}
 }
